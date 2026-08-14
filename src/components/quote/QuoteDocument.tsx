@@ -8,6 +8,7 @@ export type QuoteDocItem = {
 };
 
 export type QuoteDocData = {
+  kind?: "teklif" | "siparis";
   quoteNo: number;
   customerName: string;
   deliveryAddress: string;
@@ -115,7 +116,7 @@ export function QuoteDocument({
 
           <div className="text-right">
             <p className="text-lg font-bold uppercase tracking-[0.18em] text-indigo-600">
-              Sipariş Teklifi
+              {quote.kind === "siparis" ? "Sipariş Formu" : "Sipariş Teklifi"}
             </p>
             <p className="mt-2 text-sm font-semibold text-slate-900">
               Teklif No: #{String(quote.quoteNo).padStart(3, "0")}
@@ -209,32 +210,36 @@ export function QuoteDocument({
           </table>
         </div>
 
-        {/* Options */}
-        <div className="mt-6 flex items-center gap-8 rounded-lg border border-slate-200 bg-slate-50/60 px-5 py-3.5">
-          {option("İskonto", quote.hasDiscount)}
-          {option("Sistem", quote.hasSystem)}
-          {option("Barkod Etiket", quote.hasBarcode)}
-        </div>
+        {quote.kind !== "siparis" && (
+          <>
+            {/* Options */}
+            <div className="mt-6 flex items-center gap-8 rounded-lg border border-slate-200 bg-slate-50/60 px-5 py-3.5">
+              {option("İskonto", quote.hasDiscount)}
+              {option("Sistem", quote.hasSystem)}
+              {option("Barkod Etiket", quote.hasBarcode)}
+            </div>
 
-        {/* Totals */}
-        <div className="mt-7 flex justify-end">
-          <div className="w-72 space-y-2">
-            <div className="flex items-center justify-between text-sm text-slate-600">
-              <span>Ara Toplam</span>
-              <span>{formatMoney(subtotal, quote.currency)}</span>
+            {/* Totals */}
+            <div className="mt-7 flex justify-end">
+              <div className="w-72 space-y-2">
+                <div className="flex items-center justify-between text-sm text-slate-600">
+                  <span>Ara Toplam</span>
+                  <span>{formatMoney(subtotal, quote.currency)}</span>
+                </div>
+                <div className="flex items-center justify-between text-sm text-slate-600">
+                  <span>KDV (%{quote.vatRate.toLocaleString("tr-TR")})</span>
+                  <span>{formatMoney(vat, quote.currency)}</span>
+                </div>
+                <div className="flex items-center justify-between rounded-lg bg-slate-800 px-4 py-2.5 text-white">
+                  <span className="text-sm font-semibold">Genel Toplam</span>
+                  <span className="text-base font-bold">
+                    {formatMoney(total, quote.currency)}
+                  </span>
+                </div>
+              </div>
             </div>
-            <div className="flex items-center justify-between text-sm text-slate-600">
-              <span>KDV (%{quote.vatRate.toLocaleString("tr-TR")})</span>
-              <span>{formatMoney(vat, quote.currency)}</span>
-            </div>
-            <div className="flex items-center justify-between rounded-lg bg-slate-800 px-4 py-2.5 text-white">
-              <span className="text-sm font-semibold">Genel Toplam</span>
-              <span className="text-base font-bold">
-                {formatMoney(total, quote.currency)}
-              </span>
-            </div>
-          </div>
-        </div>
+          </>
+        )}
 
         {/* Footer */}
         <div className="mt-10 flex items-end justify-between gap-8 border-t border-slate-200 pt-6">
@@ -247,12 +252,14 @@ export function QuoteDocument({
             {company.companyAddress && <p>{company.companyAddress}</p>}
             {company.companyPhone && <p>{company.companyPhone}</p>}
           </div>
-          <div className="w-56 text-center">
-            <div className="mb-10 border-b border-slate-300" />
-            <p className="text-xs font-medium text-slate-500">
-              Onay / Kaşe / İmza
-            </p>
-          </div>
+          {quote.kind !== "siparis" && (
+            <div className="w-56 text-center">
+              <div className="mb-10 border-b border-slate-300" />
+              <p className="text-xs font-medium text-slate-500">
+                Onay / Kaşe / İmza
+              </p>
+            </div>
+          )}
         </div>
       </div>
     </div>

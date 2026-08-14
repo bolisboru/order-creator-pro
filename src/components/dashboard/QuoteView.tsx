@@ -67,8 +67,11 @@ export function QuoteView({
     logoUrl: null as string | null,
   };
 
+  const isOrder = (quote.kind ?? "teklif") === "siparis";
   const totals = quoteTotals(quote.items, quote.vatRate);
-  const filename = `teklif-${String(quote.quoteNo).padStart(3, "0")}`;
+  const filename = `${isOrder ? "siparis" : "teklif"}-${String(
+    quote.quoteNo,
+  ).padStart(3, "0")}`;
 
   const handleExport = async (format: "jpeg" | "pdf") => {
     if (!previewRef.current) return;
@@ -92,7 +95,7 @@ export function QuoteView({
     setIsDeleting(true);
     try {
       await removeQuote({ id: quoteId });
-      toast.success("Teklif silindi");
+      toast.success(isOrder ? "Sipariş silindi" : "Teklif silindi");
       onBack();
     } catch (err) {
       console.error(err);
@@ -111,11 +114,14 @@ export function QuoteView({
           </Button>
           <div>
             <h1 className="text-xl font-bold tracking-tight">
-              Teklif #{String(quote.quoteNo).padStart(3, "0")}
+              {isOrder ? "Sipariş" : "Teklif"}{" "}
+              #{String(quote.quoteNo).padStart(3, "0")}
             </h1>
             <p className="text-sm text-muted-foreground">
               {quote.customerName} · {formatDate(quote.orderDate)} ·{" "}
-              {formatMoney(totals.total, quote.currency)}
+              {isOrder
+                ? `${quote.items.length} ürün kalemi`
+                : formatMoney(totals.total, quote.currency)}
             </p>
           </div>
         </div>
@@ -153,10 +159,13 @@ export function QuoteView({
             </AlertDialogTrigger>
             <AlertDialogContent>
               <AlertDialogHeader>
-                <AlertDialogTitle>Teklifi silmek istiyor musunuz?</AlertDialogTitle>
+                <AlertDialogTitle>
+                  {isOrder ? "Siparişi" : "Teklifi"} silmek istiyor musunuz?
+                </AlertDialogTitle>
                 <AlertDialogDescription>
-                  #{String(quote.quoteNo).padStart(3, "0")} numaralı teklif
-                  kalıcı olarak silinecek. Bu işlem geri alınamaz.
+                  #{String(quote.quoteNo).padStart(3, "0")} numaralı{" "}
+                  {isOrder ? "sipariş" : "teklif"} kalıcı olarak silinecek. Bu
+                  işlem geri alınamaz.
                 </AlertDialogDescription>
               </AlertDialogHeader>
               <AlertDialogFooter>

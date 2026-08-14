@@ -4,7 +4,8 @@ import { getCurrentUser } from "./users";
 import { quoteItemValidator } from "./schema";
 
 /**
- * All quotes for the signed-in user, newest first.
+ * All records for the signed-in user, newest first. The frontend filters
+ * by kind ("teklif" / "siparis") as needed.
  */
 export const list = query({
   args: {},
@@ -32,6 +33,7 @@ export const get = query({
 
 export const create = mutation({
   args: {
+    kind: v.optional(v.union(v.literal("teklif"), v.literal("siparis"))),
     customerName: v.string(),
     deliveryAddress: v.string(),
     contactNumber: v.string(),
@@ -70,6 +72,7 @@ export const create = mutation({
 
     const id = await ctx.db.insert("quotes", {
       userId: user._id,
+      kind: args.kind ?? "teklif",
       quoteNo,
       customerName: args.customerName.trim(),
       deliveryAddress: args.deliveryAddress.trim(),

@@ -28,10 +28,12 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { BulkImportDialog } from "@/components/dashboard/BulkImportDialog";
 import { api } from "@/convex/_generated/api";
+import { parseNumberTR, parseProductRows } from "@/lib/parse-table";
 import { useMutation, useQuery } from "convex/react";
 import type { Id } from "@/convex/_generated/dataModel";
-import { Loader2, Package, Pencil, Plus, Trash2 } from "lucide-react";
+import { ClipboardPaste, Loader2, Package, Pencil, Plus, Trash2 } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 
@@ -49,8 +51,10 @@ export function ProductsPanel() {
   const createProduct = useMutation(api.products.create);
   const updateProduct = useMutation(api.products.update);
   const removeProduct = useMutation(api.products.remove);
+  const bulkCreate = useMutation(api.products.bulkCreate);
 
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [importOpen, setImportOpen] = useState(false);
   const [editingId, setEditingId] = useState<Id<"products"> | null>(null);
   const [form, setForm] = useState<ProductForm>(emptyForm);
   const [isSaving, setIsSaving] = useState(false);
@@ -130,10 +134,16 @@ export function ProductsPanel() {
             Tekliflerde kullanılacak ürünleri ve birim fiyatlarını yönetin
           </p>
         </div>
-        <Button onClick={openCreate}>
-          <Plus className="mr-2 size-4" />
-          Ürün Ekle
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button variant="outline" onClick={() => setImportOpen(true)}>
+            <ClipboardPaste className="mr-2 size-4" />
+            Toplu Ekle
+          </Button>
+          <Button onClick={openCreate}>
+            <Plus className="mr-2 size-4" />
+            Ürün Ekle
+          </Button>
+        </div>
       </div>
 
       {products.length === 0 ? (
@@ -146,12 +156,19 @@ export function ProductsPanel() {
           </h3>
           <p className="mt-1 max-w-sm text-sm text-muted-foreground">
             Ürün adı, birim fiyat ve isteğe bağlı açıklama ile ürünlerinizi
-            ekleyin. Teklif oluştururken katalogdan seçebilirsiniz.
+            ekleyin. Çok sayıda ürününüz varsa Excel tablonuzu kopyalayıp
+            “Tablo Yapıştır” ile toplu ekleyebilirsiniz.
           </p>
-          <Button className="mt-6" onClick={openCreate}>
-            <Plus className="mr-2 size-4" />
-            İlk Ürünü Ekle
-          </Button>
+          <div className="mt-6 flex gap-2">
+            <Button variant="outline" onClick={() => setImportOpen(true)}>
+              <ClipboardPaste className="mr-2 size-4" />
+              Tablo Yapıştır
+            </Button>
+            <Button onClick={openCreate}>
+              <Plus className="mr-2 size-4" />
+              İlk Ürünü Ekle
+            </Button>
+          </div>
         </div>
       ) : (
         <div className="overflow-hidden rounded-xl border border-border/70 bg-card shadow-sm">
@@ -232,6 +249,38 @@ export function ProductsPanel() {
           </Table>
         </div>
       )}
+
+      <BulkImportDialog
+        open={importOpen}
+        onOpenChange={setImportOpen}
+        title="Ürünleri Toplu Ekle"
+        description="Excel / Google Sheets'ten kopyaladığınız tabloyu yapıştırın. Sütunlar: Ürün Adı | Fiyat | Birim | Açıklama (sekme, noktalı virgül veya 2+ boşlukla ayrılmış). Fiyatı “1.250,50” gibi yazabilirsiniz."
+        placeholder={"CNC Kesim 3mm\t1.250,50\tadet\tLazer kesim sac parça\nCNC Kesim 5mm\t1.750,00\tadet\t\nBoyama\t450\tm²\tToz boya"}
+        columns={["Ürün Adı", "Fiyat", "Birim", "Açıklama"]}
+        parseText={(text) =>
+          parseProductRows(text).map((r) => [
+            r.name,
+            r.price === null
+              ? ""
+              : r.price.toLocaleString("tr-TR", {
+                  minimumFractionDigits: 2,
+                  maximumFractionDigits: 2,
+                }),
+            r.unit,
+            r.description,
+          ])
+        }
+        onImport={async (rows) =>
+          await bulkCreate({
+            items: rows.map((cells) => ({
+              name: cells[0] || "",
+              price: parseNumberTR(cells[1] ?? "") ?? 0,
+              unit: cells[2] || undefined,
+              description: cells[3] || undefined,
+            })),
+          })
+        }
+      />
 
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent>

@@ -1,33 +1,49 @@
-import { NewQuoteForm } from "@/components/dashboard/NewQuoteForm";
+import { CustomersPanel } from "@/components/dashboard/CustomersPanel";
+import { DashboardHome } from "@/components/dashboard/DashboardHome";
 import { ProductsPanel } from "@/components/dashboard/ProductsPanel";
+import { QuoteForm } from "@/components/dashboard/QuoteForm";
+import type { QuoteFormKind } from "@/components/dashboard/QuoteForm";
 import { QuotesList } from "@/components/dashboard/QuotesList";
 import { QuoteView } from "@/components/dashboard/QuoteView";
 import { SettingsPanel } from "@/components/dashboard/SettingsPanel";
 import { useAuth } from "@/hooks/use-auth";
 import type { Id } from "@/convex/_generated/dataModel";
 import {
+  Archive,
+  ClipboardList,
   FileText,
+  Home,
   LogOut,
   Package,
-  PlusCircle,
   Settings,
+  Users,
 } from "lucide-react";
 import { useState } from "react";
 import { useNavigate } from "react-router";
 
-type Tab = "yeni" | "teklifler" | "urunler" | "ayarlar";
+type Tab =
+  | "ana"
+  | "siparis"
+  | "teklif"
+  | "kayitlar"
+  | "urunler"
+  | "musteriler"
+  | "ayarlar";
 
-const TABS: { id: Tab; label: string; icon: typeof PlusCircle }[] = [
-  { id: "yeni", label: "Yeni Teklif", icon: PlusCircle },
-  { id: "teklifler", label: "Teklifler", icon: FileText },
+const TABS: { id: Tab; label: string; icon: typeof Home }[] = [
+  { id: "ana", label: "Ana Sayfa", icon: Home },
+  { id: "siparis", label: "Sipariş Formu", icon: ClipboardList },
+  { id: "teklif", label: "Teklif Formu", icon: FileText },
+  { id: "kayitlar", label: "Kayıtlar", icon: Archive },
   { id: "urunler", label: "Ürünler", icon: Package },
+  { id: "musteriler", label: "Müşteriler", icon: Users },
   { id: "ayarlar", label: "Ayarlar", icon: Settings },
 ];
 
 export default function Dashboard() {
   const { user, signOut } = useAuth();
   const navigate = useNavigate();
-  const [tab, setTab] = useState<Tab>("yeni");
+  const [tab, setTab] = useState<Tab>("ana");
   const [selectedQuoteId, setSelectedQuoteId] = useState<Id<"quotes"> | null>(
     null,
   );
@@ -132,19 +148,38 @@ export default function Dashboard() {
 
       {/* Content */}
       <div className="mx-auto w-full max-w-6xl px-4 py-6 sm:px-6">
-        {tab === "yeni" && (
-          <NewQuoteForm
-            onSaved={(id) => setSelectedQuoteId(id)}
+        {tab === "ana" && (
+          <DashboardHome
+            onOrder={() => setTab("siparis")}
+            onQuote={() => setTab("teklif")}
             goToProducts={() => setTab("urunler")}
+            goToCustomers={() => setTab("musteriler")}
           />
         )}
-        {tab === "teklifler" && (
+        {tab === "siparis" && (
+          <QuoteForm
+            kind="siparis"
+            onSaved={(id) => setSelectedQuoteId(id)}
+            goToProducts={() => setTab("urunler")}
+            goToCustomers={() => setTab("musteriler")}
+          />
+        )}
+        {tab === "teklif" && (
+          <QuoteForm
+            kind="teklif"
+            onSaved={(id) => setSelectedQuoteId(id)}
+            goToProducts={() => setTab("urunler")}
+            goToCustomers={() => setTab("musteriler")}
+          />
+        )}
+        {tab === "kayitlar" && (
           <QuotesList
             onOpen={(id) => setSelectedQuoteId(id)}
-            goToNew={() => setTab("yeni")}
+            goToNew={(kind: QuoteFormKind) => setTab(kind)}
           />
         )}
         {tab === "urunler" && <ProductsPanel />}
+        {tab === "musteriler" && <CustomersPanel />}
         {tab === "ayarlar" && <SettingsPanel />}
       </div>
     </main>

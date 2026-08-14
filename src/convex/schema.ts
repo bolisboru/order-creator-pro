@@ -51,9 +51,11 @@ const schema = defineSchema(
       isActive: v.boolean(),
     }).index("by_user", ["userId"]),
 
-    // Order quotes (sipariş teklifi) sent to customers
+    // Records: "teklif" = quote sent to the customer (full detail),
+    // "siparis" = internal production order (products + prices, no calc)
     quotes: defineTable({
       userId: v.id("users"),
+      kind: v.optional(v.union(v.literal("teklif"), v.literal("siparis"))),
       quoteNo: v.number(),
       customerName: v.string(),
       deliveryAddress: v.string(),
@@ -68,6 +70,25 @@ const schema = defineSchema(
       vatRate: v.number(), // KDV percent
       createdAt: v.number(),
     }).index("by_user", ["userId"]),
+
+    // Customers (müşteri kartı): firm name, delivery address, contact
+    customers: defineTable({
+      userId: v.id("users"),
+      name: v.string(),
+      deliveryAddress: v.optional(v.string()),
+      contactNumber: v.optional(v.string()),
+    }).index("by_user", ["userId"]),
+
+    // Customer-specific product prices (müşteriye özel fiyat)
+    customerPrices: defineTable({
+      userId: v.id("users"),
+      customerId: v.id("customers"),
+      productId: v.id("products"),
+      price: v.number(),
+    })
+      .index("by_user", ["userId"])
+      .index("by_customer", ["customerId"])
+      .index("by_product", ["productId"]),
 
     // Per-user company/quote preferences: logo, currency, VAT
     settings: defineTable({

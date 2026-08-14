@@ -2,87 +2,82 @@ import { v } from "convex/values";
 import { mutation, query } from "./_generated/server";
 import { getCurrentUser } from "./users";
 
+const customerInputValidator = v.object({
+  name: v.string(),
+  deliveryAddress: v.optional(v.string()),
+  contactNumber: v.optional(v.string()),
+});
+
 /**
- * The user's product catalog, newest first.
+ * The user's customers (müşteri kartları), sorted by name.
  */
 export const list = query({
   args: {},
   handler: async (ctx) => {
     const user = await getCurrentUser(ctx);
     if (!user) return [];
-    const products = await ctx.db
-      .query("products")
+    const customers = await ctx.db
+      .query("customers")
       .withIndex("by_user", (q) => q.eq("userId", user._id))
       .collect();
-    return products.sort((a, b) => b._creationTime - a._creationTime);
+    return customers.sort((a, b) => a.name.localeCompare(b.name, "tr"));
   },
 });
 
 export const create = mutation({
-  args: {
-    name: v.string(),
-    price: v.number(),
-    unit: v.optional(v.string()),
-    description: v.optional(v.string()),
-  },
+  args: customerInputValidator,
   handler: async (ctx, args) => {
     const user = await getCurrentUser(ctx);
     if (!user) throw new Error("Not authenticated");
     const name = args.name.trim();
-    if (!name) throw new Error("Ürün adı boş olamaz");
-    if (args.price < 0) throw new Error("Fiyat negatif olamaz");
-    return await ctx.db.insert("products", {
+    if (!name) throw new Error("Firma adı boş olamaz");
+    return await ctx.db.insert("customers", {
       userId: user._id,
       name,
-      price: args.price,
-      unit: args.unit?.trim() || undefined,
-      description: args.description?.trim() || undefined,
-      isActive: true,
+      deliveryAddress: args.deliveryAddress?.trim() || undefined,
+      contactNumber: args.contactNumber?.trim() || undefined,
     });
   },
 });
 
 export const update = mutation({
   args: {
-    id: v.id("products"),
+    id: v.id("customers"),
     name: v.string(),
-    price: v.number(),
-    unit: v.optional(v.string()),
-    description: v.optional(v.string()),
+    deliveryAddress: v.optional(v.string()),
+    contactNumber: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
     const user = await getCurrentUser(ctx);
     if (!user) throw new Error("Not authenticated");
     const existing = await ctx.db.get(args.id);
     if (!existing || existing.userId !== user._id) {
-      throw new Error("Ürün bulunamadı");
+      throw new Error("Müşteri bulunamadı");
     }
     const name = args.name.trim();
-    if (!name) throw new Error("Ürün adı boş olamaz");
-    if (args.price < 0) throw new Error("Fiyat negatif olamaz");
+    if (!name) throw new Error("Firma adı boş olamaz");
     await ctx.db.patch(args.id, {
       name,
-      price: args.price,
-      unit: args.unit?.trim() || undefined,
-      description: args.description?.trim() || undefined,
+      deliveryAddress: args.deliveryAddress?.trim() || undefined,
+      contactNumber: args.contactNumber?.trim() || undefined,
     });
     return args.id;
   },
 });
 
 export const remove = mutation({
-  args: { id: v.id("products") },
+  args: { id: v.id("customers") },
   handler: async (ctx, args) => {
     const user = await getCurrentUser(ctx);
     if (!user) throw new Error("Not authenticated");
     const existing = await ctx.db.get(args.id);
     if (!existing || existing.userId !== user._id) {
-      throw new Error("Ürün bulunamadı");
+      throw new Error("Müşteri bulunamadı");
     }
-    // Remove this product's customer-specific prices too
+    // Remove this customer's special prices too
     const prices = await ctx.db
       .query("customerPrices")
-      .withIndex("by_product", (q) => q.eq("productId", args.id))
+      .withIndex("by_customer", (q) => q.eq("customerId", args.id))
       .collect();
     for (const p of prices) await ctx.db.delete(p._id);
     await ctx.db.delete(args.id);
@@ -91,34 +86,22 @@ export const remove = mutation({
 });
 
 /**
- * Bulk import pasted product rows (name / price / unit / description).
+ * Bulk import pasted customer rows (name / address / phone). Skips empties.
  */
 export const bulkCreate = mutation({
-  args: {
-    items: v.array(
-      v.object({
-        name: v.string(),
-        price: v.number(),
-        unit: v.optional(v.string()),
-        description: v.optional(v.string()),
-      }),
-    ),
-  },
+  args: { customers: v.array(customerInputValidator) },
   handler: async (ctx, args) => {
     const user = await getCurrentUser(ctx);
     if (!user) throw new Error("Not authenticated");
     let count = 0;
-    for (const item of args.items) {
-      const name = item.name.trim();
+    for (const c of args.customers) {
+      const name = c.name.trim();
       if (!name) continue;
-      if (item.price < 0) continue;
-      await ctx.db.insert("products", {
+      await ctx.db.insert("customers", {
         userId: user._id,
         name,
-        price: item.price,
-        unit: item.unit?.trim() || undefined,
-        description: item.description?.trim() || undefined,
-        isActive: true,
+        deliveryAddress: c.deliveryAddress?.trim() || undefined,
+        contactNumber: c.contactNumber?.trim() || undefined,
       });
       count += 1;
     }
