@@ -90,9 +90,16 @@ export type ParsedCustomer = {
   contactNumber: string;
 };
 
+/** 7-15 digits -> likely a phone number (for 2-column customer pastes). */
+function looksLikePhone(s: string): boolean {
+  const digits = s.replace(/\D/g, "");
+  return digits.length >= 7 && digits.length <= 15;
+}
+
 /**
  * Customers: [firma adı, teslimat adresi, telefon]. Drops a header row
- * that mentions firma/adres/telefon.
+ * that mentions firma/adres/telefon. A 2-column row "Firma | X" puts X in
+ * the phone field when it looks like a number, otherwise in the address.
  */
 export function parseCustomerRows(text: string): ParsedCustomer[] {
   let rows = splitTableLines(text);
@@ -103,10 +110,19 @@ export function parseCustomerRows(text: string): ParsedCustomer[] {
     rows = rows.slice(1);
   }
   return rows
-    .map((c) => ({
-      name: c[0]?.trim() || "",
-      deliveryAddress: c[1]?.trim() || "",
-      contactNumber: c[2]?.trim() || "",
-    }))
+    .map((c) => {
+      const name = c[0]?.trim() || "";
+      if (c.length >= 3) {
+        return {
+          name,
+          deliveryAddress: c[1]?.trim() || "",
+          contactNumber: c[2]?.trim() || "",
+        };
+      }
+      const second = c[1]?.trim() || "";
+      return looksLikePhone(second)
+        ? { name, deliveryAddress: "", contactNumber: second }
+        : { name, deliveryAddress: second, contactNumber: "" };
+    })
     .filter((r) => r.name.length > 0);
 }
