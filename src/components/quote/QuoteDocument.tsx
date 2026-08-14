@@ -210,15 +210,15 @@ export function QuoteDocument({
           </table>
         </div>
 
+        {/* Options */}
+        <div className="mt-6 flex items-center gap-8 rounded-lg border border-slate-200 bg-slate-50/60 px-5 py-3.5">
+          {option("İskonto", quote.hasDiscount)}
+          {option("Sistem", quote.hasSystem)}
+          {option("Barkod Etiket", quote.hasBarcode)}
+        </div>
+
         {quote.kind !== "siparis" && (
           <>
-            {/* Options */}
-            <div className="mt-6 flex items-center gap-8 rounded-lg border border-slate-200 bg-slate-50/60 px-5 py-3.5">
-              {option("İskonto", quote.hasDiscount)}
-              {option("Sistem", quote.hasSystem)}
-              {option("Barkod Etiket", quote.hasBarcode)}
-            </div>
-
             {/* Totals */}
             <div className="mt-7 flex justify-end">
               <div className="w-72 space-y-2">

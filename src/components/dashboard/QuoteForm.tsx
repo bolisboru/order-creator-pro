@@ -1,7 +1,20 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import {
   Select,
   SelectContent,
@@ -17,7 +30,10 @@ import { CURRENCIES, todayISO } from "@/lib/quote-format";
 import { exportQuoteJpeg, exportQuotePdf } from "@/lib/quote-export";
 import { useMutation, useQuery } from "convex/react";
 import type { Id } from "@/convex/_generated/dataModel";
+import { cn } from "@/lib/utils";
 import {
+  Check,
+  ChevronsUpDown,
   Download,
   FileDown,
   Loader2,
@@ -62,7 +78,7 @@ const KIND_META: Record<
 > = {
   siparis: {
     title: "Sipariş Formu",
-    subtitle: "Üretime girecek siparişi kaydedin — ürünler ve fiyatlar, ayrıntılı hesaplama yok.",
+    subtitle: "Üretime girecek siparişi kaydedin — ürünler, fiyatlar ve iskonto/sistem/barkod seçenekleri.",
     save: "Siparişi Kaydet",
     entity: "Sipariş",
     doc: "siparis",
@@ -75,6 +91,116 @@ const KIND_META: Record<
     doc: "teklif",
   },
 };
+
+type ProductComboboxProps = {
+  products: {
+    _id: string;
+    name: string;
+    price: number;
+    description?: string;
+  }[];
+  selectedId?: string;
+  currency: string;
+  specialPriceFor: (productId: string) => number | null;
+  onSelect: (productId: string) => void;
+};
+
+/**
+ * Type-to-search product picker: open it, start typing the product name and
+ * the catalog filters live. Picking a row fills the product fields (and the
+ * customer's special price when one exists).
+ */
+function ProductCombobox({
+  products,
+  selectedId,
+  currency,
+  specialPriceFor,
+  onSelect,
+}: ProductComboboxProps) {
+  const [open, setOpen] = useState(false);
+  const [query, setQuery] = useState("");
+
+  const selected = products.find((p) => p._id === selectedId) ?? null;
+
+  const filtered = useMemo(() => {
+    const q = query.trim().toLocaleLowerCase("tr");
+    if (!q) return products;
+    return products.filter(
+      (p) =>
+        p.name.toLocaleLowerCase("tr").includes(q) ||
+        (p.description ?? "").toLocaleLowerCase("tr").includes(q),
+    );
+  }, [products, query]);
+
+  return (
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
+        <Button
+          type="button"
+          variant="outline"
+          role="combobox"
+          aria-expanded={open}
+          className="h-9 w-full justify-between font-normal"
+        >
+          <span className="truncate">
+            {selected
+              ? selected.name
+              : "Ürün adını yazın, otomatik tamamlansın…"}
+          </span>
+          <ChevronsUpDown className="ml-2 size-4 shrink-0 opacity-50" />
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent
+        className="w-[var(--radix-popover-trigger-width)] p-0"
+        align="start"
+      >
+        <Command>
+          <CommandInput
+            placeholder="Ürün ara…"
+            value={query}
+            onValueChange={setQuery}
+            autoFocus
+          />
+          <CommandList>
+            <CommandEmpty>Ürün bulunamadı</CommandEmpty>
+            <CommandGroup>
+              {filtered.map((p) => {
+                const sp = specialPriceFor(p._id);
+                return (
+                  <CommandItem
+                    key={p._id}
+                    value={`${p.name} ${p.description ?? ""}`}
+                    onSelect={() => {
+                      onSelect(p._id);
+                      setOpen(false);
+                      setQuery("");
+                    }}
+                  >
+                    <Check
+                      className={cn(
+                        "mr-2 size-4 shrink-0",
+                        p._id === selectedId ? "opacity-100" : "opacity-0",
+                      )}
+                    />
+                    <span className="min-w-0 flex-1 truncate">{p.name}</span>
+                    <span className="ml-2 shrink-0 text-xs text-muted-foreground">
+                      {(sp ?? p.price).toLocaleString("tr-TR", {
+                        minimumFractionDigits: 2,
+                        maximumFractionDigits: 2,
+                      })}{" "}
+                      {currency}
+                      {sp !== null ? " · özel" : ""}
+                    </span>
+                  </CommandItem>
+                );
+              })}
+            </CommandGroup>
+          </CommandList>
+        </Command>
+      </PopoverContent>
+    </Popover>
+  );
+}
 
 export function QuoteForm({
   kind,
@@ -295,9 +421,9 @@ export function QuoteForm({
         contactNumber: contactNumber.trim(),
         orderDate: orderDate || todayISO(),
         items: parsedItems,
-        hasDiscount: kind === "teklif" ? hasDiscount : false,
-        hasSystem: kind === "teklif" ? hasSystem : false,
-        hasBarcode: kind === "teklif" ? hasBarcode : false,
+        hasDiscount,
+        hasSystem,
+        hasBarcode,
         currency,
         vatRate: kind === "teklif" ? parseFloat(vatRate) || 0 : 0,
       });
@@ -514,32 +640,17 @@ export function QuoteForm({
                   </div>
                   <div className="grid grid-cols-12 gap-2">
                     <div className="col-span-12">
-                      <Select
-                        value={row.productId ?? ""}
-                        onValueChange={(v) => selectProduct(row.key, v)}
-                      >
-                        <SelectTrigger className="w-full">
-                          <SelectValue placeholder="Katalogdan ürün seçin (opsiyonel)" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {(products ?? []).map((p) => {
-                            const sp = selectedCustomerId
-                              ? priceFor(selectedCustomerId, p._id)
-                              : null;
-                            return (
-                              <SelectItem key={p._id} value={p._id}>
-                                {p.name} —{" "}
-                                {(sp ?? p.price).toLocaleString("tr-TR", {
-                                  minimumFractionDigits: 2,
-                                  maximumFractionDigits: 2,
-                                })}{" "}
-                                {currency}
-                                {sp !== null ? " (özel)" : ""}
-                              </SelectItem>
-                            );
-                          })}
-                        </SelectContent>
-                      </Select>
+                      <ProductCombobox
+                        products={products ?? []}
+                        selectedId={row.productId}
+                        currency={currency}
+                        specialPriceFor={(pid) =>
+                          selectedCustomerId
+                            ? priceFor(selectedCustomerId, pid)
+                            : null
+                        }
+                        onSelect={(pid) => selectProduct(row.key, pid)}
+                      />
                     </div>
                     <div className="col-span-12 sm:col-span-5">
                       <Input
@@ -595,13 +706,10 @@ export function QuoteForm({
 
         <Card className="border-border/70 shadow-sm">
           <CardHeader>
-            <CardTitle className="text-base">
-              {kind === "teklif" ? "Teklif Seçenekleri" : "Para Birimi"}
-            </CardTitle>
+            <CardTitle className="text-base">Form Seçenekleri</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            {kind === "teklif" && (
-              <div className="grid gap-4 sm:grid-cols-3">
+            <div className="grid gap-4 sm:grid-cols-3">
                 <div className="flex items-center justify-between gap-3 rounded-lg border border-border/70 bg-background/60 px-3 py-2.5">
                   <div>
                     <p className="text-sm font-medium">İskonto</p>
@@ -642,7 +750,6 @@ export function QuoteForm({
                   />
                 </div>
               </div>
-            )}
 
             <div
               className={
