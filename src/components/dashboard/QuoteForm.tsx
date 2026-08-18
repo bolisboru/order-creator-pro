@@ -26,7 +26,7 @@ import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { QuoteDocument } from "@/components/quote/QuoteDocument";
 import { api } from "@/convex/_generated/api";
-import { CURRENCIES, formatMoney, todayISO } from "@/lib/quote-format";
+import { CURRENCIES, todayISO } from "@/lib/quote-format";
 import { exportQuoteJpeg, exportQuotePdf } from "@/lib/quote-export";
 import { useMutation, useQuery } from "convex/react";
 import type { Id } from "@/convex/_generated/dataModel";
@@ -58,9 +58,9 @@ type Row = {
 };
 
 const UNIT_OPTIONS = [
-  { value: "adet", label: "Adet" },
-  { value: "top", label: "Top" },
-  { value: "mt", label: "Mt" },
+  { value: "adet", label: "ADET" },
+  { value: "top", label: "TOP" },
+  { value: "mt", label: "METRE" },
 ] as const;
 
 let rowCounter = 0;
@@ -629,12 +629,6 @@ export function QuoteForm({
                       )}
                     </span>
                     <div className="flex items-center gap-1">
-                      <span className="mr-2 text-xs font-semibold text-muted-foreground">
-                        Tutar: {formatMoney(
-                          (parseFloat(row.price) || 0) * (parseFloat(row.quantity) || 0),
-                          currency,
-                        )}
-                      </span>
                       <Button
                         type="button"
                         variant="ghost"
