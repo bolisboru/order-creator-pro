@@ -469,7 +469,7 @@ export function QuoteForm({
   };
 
   return (
-    <div className="grid gap-6 lg:grid-cols-[1fr_minmax(420px,480px)] lg:items-start">
+    <div className="grid gap-6 lg:grid-cols-[1fr_360px] lg:items-start">
       {/* Form */}
       <div className="space-y-6">
         <div>
@@ -665,7 +665,7 @@ export function QuoteForm({
                       onSelect={(pid) => selectProduct(row.key, pid)}
                     />
                     <div className="grid grid-cols-12 gap-2">
-                      <div className="col-span-12 sm:col-span-4">
+                      <div className="col-span-12 min-w-0 sm:col-span-3">
                         <Input
                           value={row.name}
                           onChange={(e) =>
@@ -674,16 +674,16 @@ export function QuoteForm({
                           placeholder="Ürün adı *"
                         />
                       </div>
-                      <div className="col-span-12 sm:col-span-4">
+                      <div className="col-span-12 min-w-0 sm:col-span-3">
                         <Input
                           value={row.description}
                           onChange={(e) =>
                             updateRow(row.key, { description: e.target.value })
                           }
-                          placeholder="Açıklama (ölçü, renk, kaplama)"
+                          placeholder="Açıklama"
                         />
                       </div>
-                      <div className="col-span-3 sm:col-span-1">
+                      <div className="col-span-4 min-w-0 sm:col-span-2">
                         <Input
                           type="number"
                           min="0"
@@ -694,10 +694,10 @@ export function QuoteForm({
                           }
                           title="Miktar"
                           aria-label="Miktar"
-                          placeholder="Miktar"
+                          placeholder="Adet"
                         />
                       </div>
-                      <div className="col-span-3 sm:col-span-1">
+                      <div className="col-span-4 min-w-0 sm:col-span-2">
                         <Select
                           value={row.unit}
                           onValueChange={(v) =>
@@ -716,7 +716,7 @@ export function QuoteForm({
                           </SelectContent>
                         </Select>
                       </div>
-                      <div className="col-span-6 sm:col-span-2">
+                      <div className="col-span-4 min-w-0 sm:col-span-2">
                         <Input
                           type="number"
                           min="0"
