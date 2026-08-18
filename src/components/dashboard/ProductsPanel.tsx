@@ -255,8 +255,8 @@ export function ProductsPanel() {
         onOpenChange={setImportOpen}
         title="Ürünleri Toplu Ekle"
         description="Excel / Google Sheets'ten kopyaladığınız tabloyu yapıştırın. Sütunlar: Ürün Adı | Fiyat | Birim | Açıklama (sekme, noktalı virgül veya 2+ boşlukla ayrılmış). Fiyatı “1.250,50” gibi yazabilirsiniz."
-        placeholder={"CNC Kesim 3mm\t1.250,50\tadet\tLazer kesim sac parça\nCNC Kesim 5mm\t1.750,00\tadet\t\nBoyama\t450\tm²\tToz boya"}
-        columns={["Ürün Adı", "Fiyat", "Birim", "Açıklama"]}
+        placeholder={"A.101.01.01.01\t1080 gr/m25'li Siyah Renk\t1000\tcm\t199,00\nA.101.01.02.01\t1200 gr/m25'li Beyaz\t500\tmt\t120,00\nB.201.01.01\tSac Plaka 3mm\t100\tadet\t450,00"}
+        columns={["Kod", "Malzeme", "Miktar", "Birim", "Fiyat"]}
         parseText={(text) =>
           parseProductRows(text).map((r) => [
             r.name,
@@ -275,7 +275,7 @@ export function ProductsPanel() {
             items: rows.map((cells) => ({
               name: cells[0] || "",
               price: parseNumberTR(cells[1] ?? "") ?? 0,
-              unit: cells[2] || undefined,
+              unit: cells[2] || "adet",
               description: cells[3] || undefined,
             })),
           })

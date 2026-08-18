@@ -150,3 +150,35 @@ describe("parseCustomerRows", () => {
     });
   });
 });
+
+describe("parseProductRows - 5-column format (Kod|Malzeme|Miktar|Birim|Fiyat)", () => {
+  it("parses 5-column product rows from screenshot format", () => {
+    const text =
+      "A.101.01.01.01\t1080 gr/m25'li Siyah Renk\t1000\tcm\t199,00\n" +
+      "A.101.01.02.01\t1200 gr/m25'li Beyaz\t500\tmt\t120,00";
+    const rows = parseProductRows(text);
+    expect(rows).toHaveLength(2);
+    expect(rows[0]).toEqual({
+      name: "A.101.01.01.01 - 1080 gr/m25'li Siyah Renk",
+      price: 199,
+      unit: "cm",
+      description: "Miktar: 1000",
+    });
+    expect(rows[1]).toEqual({
+      name: "A.101.01.02.01 - 1200 gr/m25'li Beyaz",
+      price: 120,
+      unit: "mt",
+      description: "Miktar: 500",
+    });
+  });
+
+  it("skips header row with kod/malzeme", () => {
+    const text =
+      "Kod\tMalzeme\tMiktar\tBirim\tFiyat\n" +
+      "B.201.01.01\tSac Plaka 3mm\t100\tadet\t450,00";
+    const rows = parseProductRows(text);
+    expect(rows).toHaveLength(1);
+    expect(rows[0].name).toContain("B.201.01.01");
+    expect(rows[0].price).toBe(450);
+  });
+});

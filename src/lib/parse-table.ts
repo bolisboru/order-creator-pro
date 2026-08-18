@@ -63,7 +63,7 @@ export function parseProductRows(text: string): ParsedProduct[] {
   let rows = splitTableLines(text);
   if (
     rows.length > 1 &&
-    /ürün|malzeme|fiyat|parça|isim/i.test(rows[0].join(" "))
+    /ürün|malzeme|fiyat|parça|isim|kod/i.test(rows[0].join(" "))
   ) {
     rows = rows.slice(1);
   }
@@ -73,6 +73,26 @@ export function parseProductRows(text: string): ParsedProduct[] {
       let price = parseNumberTR(c[1] ?? "");
       let unit = c[2]?.trim() || "";
       let description = c[3]?.trim() || "";
+
+      // Auto-detect format based on column count and content
+      if (c.length >= 5) {
+        // 5+ columns: likely [Kod, Malzeme, Miktar, Birim, Fiyat, ...]
+        const kod = c[0]?.trim() || "";
+        const malzeme = c[1]?.trim() || "";
+        const miktar = c[2]?.trim() || "";
+        const birim = c[3]?.trim() || "";
+        const fiyat = parseNumberTR(c[4] ?? "");
+        if (fiyat !== null && (malzeme || kod)) {
+          const fullName = kod ? `${kod} - ${malzeme}` : malzeme;
+          return {
+            name: fullName,
+            price: fiyat,
+            unit: birim || "adet",
+            description: miktar ? `Miktar: ${miktar}` : "",
+          };
+        }
+      }
+
       if (price === null && c.length >= 2) {
         // Shifted: name / unit / price / description
         price = parseNumberTR(c[2] ?? "");
