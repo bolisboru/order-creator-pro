@@ -868,14 +868,28 @@ export function QuoteForm({
         </div>
       </div>
 
-      {/* Live preview sidebar */}
+      {/* Live preview sidebar — scaled to fit */}
       <div className="lg:sticky lg:top-6">
         <p className="mb-2 text-sm font-medium text-muted-foreground">
           {meta.doc === "siparis" ? "SİPARİŞ ÖNİZLEMESİ" : "TEKLİF ÖNİZLEMESİ"}
         </p>
-        <div className="rounded-xl border border-border/80 bg-white shadow-lg">
-          <div ref={previewRef}>
-            <QuoteDocument quote={previewQuote} company={previewCompany} />
+        <div className="rounded-xl border border-border/80 bg-slate-100 p-3 shadow-lg">
+          <div className="mx-auto overflow-hidden rounded-lg bg-white shadow-md" style={{ width: 360 }}>
+            <div className="relative" style={{ height: 360 * (1123 / 794) }}>
+              <div
+                ref={previewRef}
+                style={{
+                  position: "absolute",
+                  top: 0,
+                  left: 0,
+                  width: 794,
+                  transform: "scale(0.453)",
+                  transformOrigin: "top left",
+                }}
+              >
+                <QuoteDocument quote={previewQuote} company={previewCompany} />
+              </div>
+            </div>
           </div>
         </div>
       </div>
