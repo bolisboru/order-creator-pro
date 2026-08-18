@@ -37,19 +37,11 @@ import {
   Download,
   FileDown,
   Loader2,
-  Maximize2,
   Plus,
   Save,
   Trash2,
   UserPlus,
 } from "lucide-react";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 
@@ -69,15 +61,6 @@ const UNIT_OPTIONS = [
   { value: "adet", label: "Adet" },
   { value: "top", label: "Top" },
   { value: "mt", label: "Mt" },
-  { value: "kg", label: "Kg" },
-  { value: "kutu", label: "Kutu" },
-  { value: "rulo", label: "Rulo" },
-  { value: "cm", label: "Cm" },
-  { value: "mm", label: "Mm" },
-  { value: "m²", label: "m²" },
-  { value: "paket", label: "Paket" },
-  { value: "kasa", label: "Kasa" },
-  { value: "palet", label: "Palet" },
 ] as const;
 
 let rowCounter = 0;
@@ -885,36 +868,14 @@ export function QuoteForm({
         </div>
       </div>
 
-      {/* Live preview — sidebar + fullscreen dialog */}
+      {/* Live preview sidebar */}
       <div className="lg:sticky lg:top-6">
-        <div className="mb-2 flex items-center justify-between">
-          <p className="text-sm font-medium text-muted-foreground">
-            Canlı önizleme
-          </p>
-          <Dialog>
-            <DialogTrigger asChild>
-              <Button type="button" variant="outline" size="sm">
-                <Maximize2 className="mr-1.5 size-3.5" />
-                Tam Ekran
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="max-w-[95vw] h-[95vh] p-0 overflow-hidden">
-              <DialogHeader className="px-6 pt-5 pb-0">
-                <DialogTitle>Önizleme — {meta.doc === "siparis" ? "Sipariş Formu" : "Sipariş Teklifi"} #{String(nextQuoteNo).padStart(3, "0")}</DialogTitle>
-              </DialogHeader>
-              <div className="flex-1 overflow-auto bg-slate-200/60 p-6 pt-2">
-                <div className="mx-auto w-fit shadow-xl shadow-slate-900/10">
-                  <QuoteDocument quote={previewQuote} company={previewCompany} />
-                </div>
-              </div>
-            </DialogContent>
-          </Dialog>
-        </div>
-        <div className="max-h-[85vh] overflow-auto rounded-xl border border-border/80 bg-slate-200/60 p-4 shadow-inner">
-          <div className="mx-auto w-fit shadow-xl shadow-slate-900/10">
-            <div ref={previewRef}>
-              <QuoteDocument quote={previewQuote} company={previewCompany} />
-            </div>
+        <p className="mb-2 text-sm font-medium text-muted-foreground">
+          {meta.doc === "siparis" ? "SİPARİŞ ÖNİZLEMESİ" : "TEKLİF ÖNİZLEMESİ"}
+        </p>
+        <div className="rounded-xl border border-border/80 bg-white shadow-lg">
+          <div ref={previewRef}>
+            <QuoteDocument quote={previewQuote} company={previewCompany} />
           </div>
         </div>
       </div>
