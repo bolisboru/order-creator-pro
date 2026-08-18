@@ -26,7 +26,7 @@ import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { QuoteDocument } from "@/components/quote/QuoteDocument";
 import { api } from "@/convex/_generated/api";
-import { CURRENCIES, todayISO } from "@/lib/quote-format";
+import { CURRENCIES, formatMoney, todayISO } from "@/lib/quote-format";
 import { exportQuoteJpeg, exportQuotePdf } from "@/lib/quote-export";
 import { useMutation, useQuery } from "convex/react";
 import type { Id } from "@/convex/_generated/dataModel";
@@ -58,9 +58,9 @@ type Row = {
 };
 
 const UNIT_OPTIONS = [
-  { value: "adet", label: "ADET" },
-  { value: "top", label: "TOP" },
-  { value: "mt", label: "METRE" },
+  { value: "mt", label: "Metre" },
+  { value: "top", label: "Top" },
+  { value: "adet", label: "Adet" },
 ] as const;
 
 let rowCounter = 0;
@@ -724,6 +724,17 @@ export function QuoteForm({
                           aria-label="Birim fiyat"
                         />
                       </div>
+                      {kind === "teklif" && (
+                        <div className="col-span-12 min-w-0 sm:col-span-2">
+                          <div className="flex h-9 items-center rounded-md border border-border/70 bg-muted/40 px-3 text-sm font-medium text-foreground">
+                            {(() => {
+                              const qty = parseFloat(row.quantity) || 0;
+                              const price = parseFloat(row.price) || 0;
+                              return qty > 0 && price > 0 ? formatMoney(qty * price, currency) : "—";
+                            })()}
+                          </div>
+                        </div>
+                      )}
                     </div>
                   </div>
                 </div>
