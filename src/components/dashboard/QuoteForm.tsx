@@ -26,7 +26,7 @@ import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { QuoteDocument } from "@/components/quote/QuoteDocument";
 import { api } from "@/convex/_generated/api";
-import { CURRENCIES, todayISO } from "@/lib/quote-format";
+import { CURRENCIES, formatMoney, todayISO } from "@/lib/quote-format";
 import { exportQuoteJpeg, exportQuotePdf } from "@/lib/quote-export";
 import { useMutation, useQuery } from "convex/react";
 import type { Id } from "@/convex/_generated/dataModel";
@@ -37,11 +37,19 @@ import {
   Download,
   FileDown,
   Loader2,
+  Maximize2,
   Plus,
   Save,
   Trash2,
   UserPlus,
 } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 
@@ -52,9 +60,25 @@ type Row = {
   productId?: string;
   name: string;
   quantity: string;
+  unit: string;
   price: string;
   description: string;
 };
+
+const UNIT_OPTIONS = [
+  { value: "adet", label: "Adet" },
+  { value: "top", label: "Top" },
+  { value: "mt", label: "Mt" },
+  { value: "kg", label: "Kg" },
+  { value: "kutu", label: "Kutu" },
+  { value: "rulo", label: "Rulo" },
+  { value: "cm", label: "Cm" },
+  { value: "mm", label: "Mm" },
+  { value: "m²", label: "m²" },
+  { value: "paket", label: "Paket" },
+  { value: "kasa", label: "Kasa" },
+  { value: "palet", label: "Palet" },
+] as const;
 
 let rowCounter = 0;
 function newRow(): Row {
@@ -63,6 +87,7 @@ function newRow(): Row {
     key: `row-${rowCounter}`,
     name: "",
     quantity: "1",
+    unit: "adet",
     price: "",
     description: "",
   };
@@ -280,6 +305,7 @@ export function QuoteForm({
         .map((r) => ({
           name: r.name.trim(),
           quantity: Math.max(0, parseFloat(r.quantity) || 0),
+          unit: r.unit || "adet",
           price: Math.max(0, parseFloat(r.price) || 0),
           description: r.description.trim() || undefined,
         })),
@@ -339,6 +365,7 @@ export function QuoteForm({
       name: product.name,
       price: String(special ?? product.price),
       description: product.description || "",
+      unit: product.unit || "adet",
       quantity: "1",
     });
   };
@@ -608,11 +635,7 @@ export function QuoteForm({
                 row.productId && selectedCustomerId
                   ? priceFor(selectedCustomerId, row.productId)
                   : null;
-              return (
-                <div
-                  key={row.key}
-                  className="rounded-lg border border-border/70 bg-background/60 p-3"
-                >
+              return (                <div key={row.key} className="rounded-lg border border-border/70 bg-background/60 p-3">
                   <div className="mb-2 flex items-center justify-between">
                     <span className="text-xs font-medium text-muted-foreground">
                       Ürün {index + 1}
@@ -622,80 +645,108 @@ export function QuoteForm({
                         </span>
                       )}
                     </span>
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="icon"
-                      className="size-7 text-muted-foreground hover:text-destructive"
-                      onClick={() =>
-                        setRows((prev) =>
-                          prev.length > 1
-                            ? prev.filter((r) => r.key !== row.key)
-                            : prev,
-                        )
-                      }
-                    >
-                      <Trash2 className="size-4" />
-                    </Button>
+                    <div className="flex items-center gap-1">
+                      <span className="mr-2 text-xs font-semibold text-muted-foreground">
+                        Tutar: {formatMoney(
+                          (parseFloat(row.price) || 0) * (parseFloat(row.quantity) || 0),
+                          currency,
+                        )}
+                      </span>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        className="size-7 text-muted-foreground hover:text-destructive"
+                        onClick={() =>
+                          setRows((prev) =>
+                            prev.length > 1
+                              ? prev.filter((r) => r.key !== row.key)
+                              : prev,
+                          )
+                        }
+                      >
+                        <Trash2 className="size-4" />
+                      </Button>
+                    </div>
                   </div>
-                  <div className="grid grid-cols-12 gap-2">
-                    <div className="col-span-12">
-                      <ProductCombobox
-                        products={products ?? []}
-                        selectedId={row.productId}
-                        currency={currency}
-                        specialPriceFor={(pid) =>
-                          selectedCustomerId
-                            ? priceFor(selectedCustomerId, pid)
-                            : null
-                        }
-                        onSelect={(pid) => selectProduct(row.key, pid)}
-                      />
-                    </div>
-                    <div className="col-span-12 sm:col-span-5">
-                      <Input
-                        value={row.name}
-                        onChange={(e) =>
-                          updateRow(row.key, { name: e.target.value })
-                        }
-                        placeholder="Ürün adı *"
-                      />
-                    </div>
-                    <div className="col-span-12 sm:col-span-5">
-                      <Input
-                        value={row.description}
-                        onChange={(e) =>
-                          updateRow(row.key, { description: e.target.value })
-                        }
-                        placeholder="Açıklama (ör. ölçü, renk, kaplama)"
-                      />
-                    </div>
-                    <div className="col-span-4 sm:col-span-1">
-                      <Input
-                        type="number"
-                        min="0"
-                        step="1"
-                        value={row.quantity}
-                        onChange={(e) =>
-                          updateRow(row.key, { quantity: e.target.value })
-                        }
-                        title="Miktar"
-                        aria-label="Miktar"
-                      />
-                    </div>
-                    <div className="col-span-8 sm:col-span-1">
-                      <Input
-                        type="number"
-                        min="0"
-                        step="0.01"
-                        value={row.price}
-                        onChange={(e) =>
-                          updateRow(row.key, { price: e.target.value })
-                        }
-                        placeholder="0,00"
-                        title="Birim fiyat"
-                        aria-label="Birim fiyat"
-                      />
+                  <div className="space-y-2">
+                    <ProductCombobox
+                      products={products ?? []}
+                      selectedId={row.productId}
+                      currency={currency}
+                      specialPriceFor={(pid) =>
+                        selectedCustomerId
+                          ? priceFor(selectedCustomerId, pid)
+                          : null
+                      }
+                      onSelect={(pid) => selectProduct(row.key, pid)}
+                    />
+                    <div className="grid grid-cols-12 gap-2">
+                      <div className="col-span-12 sm:col-span-4">
+                        <Input
+                          value={row.name}
+                          onChange={(e) =>
+                            updateRow(row.key, { name: e.target.value })
+                          }
+                          placeholder="Ürün adı *"
+                        />
+                      </div>
+                      <div className="col-span-12 sm:col-span-4">
+                        <Input
+                          value={row.description}
+                          onChange={(e) =>
+                            updateRow(row.key, { description: e.target.value })
+                          }
+                          placeholder="Açıklama (ölçü, renk, kaplama)"
+                        />
+                      </div>
+                      <div className="col-span-3 sm:col-span-1">
+                        <Input
+                          type="number"
+                          min="0"
+                          step="1"
+                          value={row.quantity}
+                          onChange={(e) =>
+                            updateRow(row.key, { quantity: e.target.value })
+                          }
+                          title="Miktar"
+                          aria-label="Miktar"
+                          placeholder="Miktar"
+                        />
+                      </div>
+                      <div className="col-span-3 sm:col-span-1">
+                        <Select
+                          value={row.unit}
+                          onValueChange={(v) =>
+                            updateRow(row.key, { unit: v })
+                          }
+                        >
+                          <SelectTrigger className="h-9" aria-label="Birim">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {UNIT_OPTIONS.map((u) => (
+                              <SelectItem key={u.value} value={u.value}>
+                                {u.label}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="col-span-6 sm:col-span-2">
+                        <Input
+                          type="number"
+                          min="0"
+                          step="0.01"
+                          value={row.price}
+                          onChange={(e) =>
+                            updateRow(row.key, { price: e.target.value })
+                          }
+                          placeholder="Birim Fiyat"
+                          title="Birim fiyat"
+                          aria-label="Birim fiyat"
+                        />
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -834,12 +885,30 @@ export function QuoteForm({
         </div>
       </div>
 
-      {/* Live preview */}
+      {/* Live preview — sidebar + fullscreen dialog */}
       <div className="lg:sticky lg:top-6">
         <div className="mb-2 flex items-center justify-between">
           <p className="text-sm font-medium text-muted-foreground">
-            Canlı önizleme — kaydetmeden indirebilirsiniz
+            Canlı önizleme
           </p>
+          <Dialog>
+            <DialogTrigger asChild>
+              <Button type="button" variant="outline" size="sm">
+                <Maximize2 className="mr-1.5 size-3.5" />
+                Tam Ekran
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="max-w-[95vw] h-[95vh] p-0 overflow-hidden">
+              <DialogHeader className="px-6 pt-5 pb-0">
+                <DialogTitle>Önizleme — {meta.doc === "siparis" ? "Sipariş Formu" : "Sipariş Teklifi"} #{String(nextQuoteNo).padStart(3, "0")}</DialogTitle>
+              </DialogHeader>
+              <div className="flex-1 overflow-auto bg-slate-200/60 p-6 pt-2">
+                <div className="mx-auto w-fit shadow-xl shadow-slate-900/10">
+                  <QuoteDocument quote={previewQuote} company={previewCompany} />
+                </div>
+              </div>
+            </DialogContent>
+          </Dialog>
         </div>
         <div className="max-h-[85vh] overflow-auto rounded-xl border border-border/80 bg-slate-200/60 p-4 shadow-inner">
           <div className="mx-auto w-fit shadow-xl shadow-slate-900/10">

@@ -21,6 +21,7 @@ export const quoteItemValidator = v.object({
   name: v.string(),
   price: v.number(),
   quantity: v.number(),
+  unit: v.optional(v.string()), // adet, top, mt, m2, kg, …
   description: v.optional(v.string()),
 });
 export type QuoteItem = Infer<typeof quoteItemValidator>;

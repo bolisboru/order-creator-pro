@@ -4,6 +4,7 @@ export type QuoteDocItem = {
   name: string;
   price: number;
   quantity: number;
+  unit?: string;
   description?: string;
 };
 
@@ -164,9 +165,8 @@ export function QuoteDocument({
                 <th className="px-4 py-2.5 font-semibold">Ürün</th>
                 <th className="px-4 py-2.5 font-semibold">Açıklama</th>
                 <th className="px-4 py-2.5 text-right font-semibold">Miktar</th>
-                <th className="px-4 py-2.5 text-right font-semibold">
-                  Birim Fiyat
-                </th>
+                <th className="px-4 py-2.5 font-center font-semibold">Birim</th>
+                <th className="px-4 py-2.5 text-right font-semibold">Birim Fiyat</th>
                 <th className="px-4 py-2.5 text-right font-semibold">Tutar</th>
               </tr>
             </thead>
@@ -188,6 +188,9 @@ export function QuoteDocument({
                   <td className="px-4 py-3 text-right text-sm text-slate-700">
                     {item.quantity.toLocaleString("tr-TR")}
                   </td>
+                  <td className="px-4 py-3 text-center text-sm text-slate-500">
+                    {item.unit || "adet"}
+                  </td>
                   <td className="px-4 py-3 text-right text-sm text-slate-700">
                     {formatMoney(item.price, quote.currency)}
                   </td>
@@ -199,7 +202,7 @@ export function QuoteDocument({
               {quote.items.length === 0 && (
                 <tr>
                   <td
-                    colSpan={6}
+                    colSpan={7}
                     className="px-4 py-6 text-center text-sm text-slate-400"
                   >
                     Henüz ürün eklenmedi
