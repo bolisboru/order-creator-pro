@@ -160,15 +160,15 @@ export function QuoteDocument({
         <div className="mt-6 overflow-hidden rounded-lg border border-slate-200">
           <table className="w-full border-collapse text-left">
             <thead>
-              <tr className="bg-slate-50 text-[11px] uppercase tracking-wider text-slate-500">
-                <th className="px-3 py-2 font-semibold w-8">#</th>
-                <th className="px-3 py-2 font-semibold">Ürün</th>
-                <th className="px-3 py-2 font-semibold">Açıklama</th>
-                <th className="px-3 py-2 text-right font-semibold">Miktar</th>
-                <th className="px-3 py-2 text-center font-semibold">Birim</th>
-                <th className="px-3 py-2 text-right font-semibold">Birim Fiyat</th>
+              <tr className="bg-slate-50 text-[10px] uppercase tracking-wider text-slate-500">
+                <th className="px-2 py-1.5 font-semibold w-6">#</th>
+                <th className="px-2 py-1.5 font-semibold">Ürün</th>
+                <th className="px-2 py-1.5 font-semibold">Açıklama</th>
+                <th className="px-2 py-1.5 text-right font-semibold">Miktar</th>
+                <th className="px-2 py-1.5 text-center font-semibold">Birim</th>
+                <th className="px-2 py-1.5 text-right font-semibold">Birim Fiyat</th>
                 {quote.kind !== "siparis" && (
-                  <th className="px-3 py-2 text-right font-semibold">Tutar</th>
+                  <th className="px-2 py-1.5 text-right font-semibold">Tutar</th>
                 )}
               </tr>
             </thead>
@@ -181,23 +181,23 @@ export function QuoteDocument({
                   <td className="px-3 py-2 text-xs text-slate-500">
                     {idx + 1}
                   </td>
-                  <td className="px-3 py-2 text-sm font-semibold text-slate-900 break-words">
+                  <td className="px-2 py-1.5 text-[11px] font-semibold text-slate-900 break-words">
                     {item.name}
                   </td>
-                  <td className="px-3 py-2 text-xs leading-4 text-slate-500 break-words">
+                  <td className="px-2 py-1.5 text-[10px] leading-3.5 text-slate-500 break-words">
                     {item.description || "—"}
                   </td>
-                  <td className="px-3 py-2 text-right text-sm text-slate-700">
+                  <td className="px-2 py-1.5 text-right text-[11px] text-slate-700">
                     {item.quantity.toLocaleString("tr-TR")}
                   </td>
-                  <td className="px-3 py-2 text-center text-xs text-slate-500">
-                    {item.unit || "adet"}
+                  <td className="px-2 py-1.5 text-center text-[10px] font-medium uppercase tracking-wide text-slate-500">
+                    {item.unit?.toUpperCase() || "ADET"}
                   </td>
-                  <td className="px-3 py-2 text-right text-sm text-slate-700">
+                  <td className="px-2 py-1.5 text-right text-[11px] text-slate-700">
                     {formatMoney(item.price, quote.currency)}
                   </td>
                   {quote.kind !== "siparis" && (
-                    <td className="px-3 py-2 text-right text-sm font-semibold text-slate-900">
+                    <td className="px-2 py-1.5 text-right text-[11px] font-semibold text-slate-900">
                       {formatMoney(item.price * item.quantity, quote.currency)}
                     </td>
                   )}
@@ -207,7 +207,7 @@ export function QuoteDocument({
                 <tr>
                   <td
                     colSpan={quote.kind !== "siparis" ? 7 : 6}
-                    className="px-4 py-6 text-center text-sm text-slate-400"
+                    className="px-3 py-5 text-center text-xs text-slate-400"
                   >
                     Henüz ürün eklenmedi
                   </td>
