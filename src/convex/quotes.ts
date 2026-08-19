@@ -91,6 +91,7 @@ export const create = mutation({
       currency: args.currency,
       vatRate: args.vatRate,
       createdAt: Date.now(),
+      status: args.kind === "siparis" ? "bekliyor" : undefined,
     });
 
     return { id, quoteNo };
@@ -145,6 +146,28 @@ export const update = mutation({
       vatRate: args.vatRate,
     });
     return { id: args.id, quoteNo: quote.quoteNo };
+  },
+});
+
+export const updateStatus = mutation({
+  args: {
+    id: v.id("quotes"),
+    status: v.union(
+      v.literal("bekliyor"),
+      v.literal("gonderildi"),
+      v.literal("kismi_sevk"),
+      v.literal("iptal"),
+    ),
+  },
+  handler: async (ctx, args) => {
+    const user = await getCurrentUser(ctx);
+    if (!user) throw new Error("Not authenticated");
+    const quote = await ctx.db.get(args.id);
+    if (!quote || quote.userId !== user._id) {
+      throw new Error("Sipariş bulunamadı");
+    }
+    await ctx.db.patch(args.id, { status: args.status });
+    return { id: args.id };
   },
 });
 

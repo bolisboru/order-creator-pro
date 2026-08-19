@@ -2,23 +2,30 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { api } from "@/convex/_generated/api";
 import { useQuery } from "convex/react";
+import { cn } from "@/lib/utils";
 import {
   ArrowRight,
   BadgeCheck,
+  CheckCircle2,
   ClipboardList,
+  Clock,
   FileText,
   Package,
+  PackageCheck,
   Users,
+  XCircle,
 } from "lucide-react";
 
 export function DashboardHome({
   onOrder,
   onQuote,
+  onTracking,
   goToProducts,
   goToCustomers,
 }: {
   onOrder: () => void;
   onQuote: () => void;
+  onTracking: () => void;
   goToProducts: () => void;
   goToCustomers: () => void;
 }) {
@@ -28,8 +35,16 @@ export function DashboardHome({
 
   const teklifCount =
     quotes?.filter((q) => (q.kind ?? "teklif") === "teklif").length ?? 0;
-  const siparisCount =
-    quotes?.filter((q) => (q.kind ?? "teklif") === "siparis").length ?? 0;
+  const siparisler = quotes?.filter((q) => (q.kind ?? "teklif") === "siparis") ?? [];
+  const siparisCount = siparisler.length;
+
+  // Sipariş durum sayıları
+  const statusCounts = {
+    bekliyor: siparisler.filter((q) => (q.status ?? "bekliyor") === "bekliyor").length,
+    gonderildi: siparisler.filter((q) => q.status === "gonderildi").length,
+    kismi_sevk: siparisler.filter((q) => q.status === "kismi_sevk").length,
+    iptal: siparisler.filter((q) => q.status === "iptal").length,
+  };
 
   const stats = [
     { label: "Teklif", value: teklifCount, icon: FileText },
@@ -62,6 +77,43 @@ export function DashboardHome({
           </Card>
         ))}
       </div>
+
+      {/* Sipariş Durumu Özeti */}
+      {siparisCount > 0 && (
+        <div>
+          <div className="mb-3 flex items-center justify-between">
+            <h3 className="text-sm font-semibold text-foreground">Sipariş Durumu</h3>
+            <button
+              type="button"
+              onClick={onTracking}
+              className="text-xs font-medium text-primary underline-offset-2 hover:underline"
+            >
+              Takibe git →
+            </button>
+          </div>
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+            {([
+              { key: "bekliyor", label: "Bekliyor", icon: Clock, color: "text-amber-600", bg: "bg-amber-50 border-amber-200" },
+              { key: "gonderildi", label: "Gönderildi", icon: CheckCircle2, color: "text-emerald-600", bg: "bg-emerald-50 border-emerald-200" },
+              { key: "kismi_sevk", label: "Kısmi Sevk", icon: PackageCheck, color: "text-blue-600", bg: "bg-blue-50 border-blue-200" },
+              { key: "iptal", label: "İptal", icon: XCircle, color: "text-red-600", bg: "bg-red-50 border-red-200" },
+            ] as const).map(({ key, label, icon: Icon, color, bg }) => (
+              <Card
+                key={key}
+                className={cn("border p-3 shadow-sm", bg)}
+              >
+                <div className="flex items-center justify-between">
+                  <span className={cn("text-xs font-medium", color)}>{label}</span>
+                  <Icon className={cn("size-3.5", color)} />
+                </div>
+                <p className={cn("mt-1 text-xl font-bold", color)}>
+                  {statusCounts[key]}
+                </p>
+              </Card>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Two entry cards */}
       <div className="grid gap-4 lg:grid-cols-2">

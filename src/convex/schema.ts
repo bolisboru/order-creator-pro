@@ -70,6 +70,15 @@ const schema = defineSchema(
       currency: v.string(),
       vatRate: v.number(), // KDV percent
       createdAt: v.number(),
+      // Sipariş takip durumu
+      status: v.optional(
+        v.union(
+          v.literal("bekliyor"),
+          v.literal("gonderildi"),
+          v.literal("kismi_sevk"),
+          v.literal("iptal"),
+        ),
+      ),
     }).index("by_user", ["userId"]),
 
     // Customers (müşteri kartı): firm name, delivery address, contact

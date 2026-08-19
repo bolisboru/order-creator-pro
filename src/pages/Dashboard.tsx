@@ -6,6 +6,7 @@ import type { QuoteFormKind } from "@/components/dashboard/QuoteForm";
 import { QuotesList } from "@/components/dashboard/QuotesList";
 import { QuoteView } from "@/components/dashboard/QuoteView";
 import { SettingsPanel } from "@/components/dashboard/SettingsPanel";
+import { SiparisTakip } from "@/components/dashboard/SiparisTakip";
 import { useAuth } from "@/hooks/use-auth";
 import type { Id } from "@/convex/_generated/dataModel";
 import {
@@ -15,6 +16,7 @@ import {
   Home,
   LogOut,
   Package,
+  Route,
   Settings,
   Users,
 } from "lucide-react";
@@ -25,6 +27,7 @@ type Tab =
   | "ana"
   | "siparis"
   | "teklif"
+  | "takip"
   | "kayitlar"
   | "urunler"
   | "musteriler"
@@ -34,6 +37,7 @@ const TABS: { id: Tab; label: string; icon: typeof Home }[] = [
   { id: "ana", label: "Ana Sayfa", icon: Home },
   { id: "siparis", label: "Sipariş Formu", icon: ClipboardList },
   { id: "teklif", label: "Teklif Formu", icon: FileText },
+  { id: "takip", label: "Sipariş Takibi", icon: Route },
   { id: "kayitlar", label: "Kayıtlar", icon: Archive },
   { id: "urunler", label: "Ürünler", icon: Package },
   { id: "musteriler", label: "Müşteriler", icon: Users },
@@ -160,6 +164,7 @@ export default function Dashboard() {
           <DashboardHome
             onOrder={() => setTab("siparis")}
             onQuote={() => setTab("teklif")}
+            onTracking={() => setTab("takip")}
             goToProducts={() => setTab("urunler")}
             goToCustomers={() => setTab("musteriler")}
           />
@@ -187,6 +192,9 @@ export default function Dashboard() {
             goToProducts={() => setTab("urunler")}
             goToCustomers={() => setTab("musteriler")}
           />
+        )}
+        {tab === "takip" && (
+          <SiparisTakip onOpen={(id) => setSelectedQuoteId(id)} />
         )}
         {tab === "kayitlar" && (
           <QuotesList
