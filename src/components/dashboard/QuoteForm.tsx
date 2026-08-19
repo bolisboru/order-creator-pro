@@ -212,11 +212,13 @@ function ProductCombobox({
 
 export function QuoteForm({
   kind,
+  editQuoteId,
   onSaved,
   goToProducts,
   goToCustomers,
 }: {
   kind: QuoteFormKind;
+  editQuoteId?: Id<"quotes"> | null;
   onSaved: (id: Id<"quotes">) => void;
   goToProducts: () => void;
   goToCustomers: () => void;
@@ -227,7 +229,11 @@ export function QuoteForm({
   const customerPrices = useQuery(api.customers.prices.list);
   const settings = useQuery(api.settings.get);
   const quotes = useQuery(api.quotes.list, {});
+  const editQuote = editQuoteId
+    ? useQuery(api.quotes.get, { id: editQuoteId })
+    : undefined;
   const createQuote = useMutation(api.quotes.create);
+  const updateQuote = useMutation(api.quotes.update);
   const createCustomer = useMutation(api.customers.create);
 
   const [customerName, setCustomerName] = useState("");
@@ -246,6 +252,7 @@ export function QuoteForm({
   const [isSaving, setIsSaving] = useState(false);
   const [isSavingCustomer, setIsSavingCustomer] = useState(false);
   const [isExporting, setIsExporting] = useState<"jpeg" | "pdf" | null>(null);
+  const loadedEdit = useRef(false);
 
   const previewRef = useRef<HTMLDivElement>(null);
 
@@ -258,6 +265,36 @@ export function QuoteForm({
       setVatRate(String(settings.vatRate ?? DEFAULT_VAT));
     }
   }, [settings]);
+
+  // Load existing quote data for editing
+  useEffect(() => {
+    if (editQuote && !loadedEdit.current) {
+      loadedEdit.current = true;
+      setCustomerName(editQuote.customerName);
+      setDeliveryAddress(editQuote.deliveryAddress);
+      setContactNumber(editQuote.contactNumber);
+      setOrderDate(editQuote.orderDate);
+      setHasDiscount(editQuote.hasDiscount);
+      setHasSystem(editQuote.hasSystem);
+      setHasBarcode(editQuote.hasBarcode);
+      setCurrency(editQuote.currency);
+      if (editQuote.vatRate > 0) setVatRate(String(editQuote.vatRate));
+      setRows(
+        editQuote.items.map((item) => {
+          rowCounter += 1;
+          return {
+            key: `row-${rowCounter}`,
+            productId: undefined,
+            name: item.name,
+            quantity: String(item.quantity),
+            unit: item.unit || "adet",
+            price: String(item.price),
+            description: item.description || "",
+          };
+        }),
+      );
+    }
+  }, [editQuote]);
 
   // customerId:productId -> price
   const priceMap = useMemo(() => {
@@ -424,7 +461,7 @@ export function QuoteForm({
     }
     setIsSaving(true);
     try {
-      const result = await createQuote({
+      const payload = {
         kind,
         customerName: customerName.trim(),
         deliveryAddress: deliveryAddress.trim(),
@@ -436,10 +473,19 @@ export function QuoteForm({
         hasBarcode,
         currency,
         vatRate: kind === "teklif" ? parseFloat(vatRate) || 0 : 0,
-      });
-      toast.success(
-        `${meta.entity} #${String(result.quoteNo).padStart(3, "0")} kaydedildi`,
-      );
+      };
+      let result;
+      if (editQuoteId) {
+        result = await updateQuote({ id: editQuoteId, ...payload });
+        toast.success(
+          `${meta.entity} #${String(result.quoteNo).padStart(3, "0")} güncellendi`,
+        );
+      } else {
+        result = await createQuote(payload);
+        toast.success(
+          `${meta.entity} #${String(result.quoteNo).padStart(3, "0")} kaydedildi`,
+        );
+      }
       onSaved(result.id);
     } catch (err) {
       console.error(err);
@@ -473,7 +519,9 @@ export function QuoteForm({
       {/* Form */}
       <div className="space-y-6">
         <div>
-          <h2 className="text-lg font-bold tracking-tight">{meta.title}</h2>
+          <h2 className="text-lg font-bold tracking-tight">
+            {editQuoteId ? `${meta.title} — Düzenleme` : meta.title}
+          </h2>
           <p className="text-sm text-muted-foreground">{meta.subtitle}</p>
         </div>
 
@@ -840,7 +888,7 @@ export function QuoteForm({
             ) : (
               <Save className="mr-2 size-4" />
             )}
-            {meta.save}
+            {editQuoteId ? "Güncelle" : meta.save}
           </Button>
           <Button
             type="button"

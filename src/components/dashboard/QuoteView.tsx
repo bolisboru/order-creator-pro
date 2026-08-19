@@ -19,6 +19,7 @@ import type { Id } from "@/convex/_generated/dataModel";
 import {
   ArrowLeft,
   Download,
+  Edit3,
   FileDown,
   Loader2,
   Trash2,
@@ -29,9 +30,11 @@ import { toast } from "sonner";
 export function QuoteView({
   quoteId,
   onBack,
+  onEdit,
 }: {
   quoteId: Id<"quotes">;
   onBack: () => void;
+  onEdit?: (id: Id<"quotes">, kind: "siparis" | "teklif") => void;
 }) {
   const quote = useQuery(api.quotes.get, { id: quoteId });
   const settings = useQuery(api.settings.get);
@@ -126,6 +129,15 @@ export function QuoteView({
           </div>
         </div>
         <div className="flex flex-wrap items-center gap-2">
+          {onEdit && (
+            <Button
+              variant="default"
+              onClick={() => onEdit(quoteId, isOrder ? "siparis" : "teklif")}
+            >
+              <Edit3 className="mr-2 size-4" />
+              Düzenle
+            </Button>
+          )}
           <Button
             variant="outline"
             onClick={() => handleExport("jpeg")}

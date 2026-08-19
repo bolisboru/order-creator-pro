@@ -47,19 +47,27 @@ export default function Dashboard() {
   const [selectedQuoteId, setSelectedQuoteId] = useState<Id<"quotes"> | null>(
     null,
   );
+  const [editQuoteId, setEditQuoteId] = useState<Id<"quotes"> | null>(
+    null,
+  );
 
   const handleSignOut = async () => {
     await signOut();
     navigate("/");
   };
 
-  if (selectedQuoteId) {
+  if (selectedQuoteId && !editQuoteId) {
     return (
       <main className="min-h-screen bg-background px-4 py-6 text-foreground sm:px-6">
         <div className="mx-auto w-full max-w-4xl">
           <QuoteView
             quoteId={selectedQuoteId}
             onBack={() => setSelectedQuoteId(null)}
+            onEdit={(id, kind) => {
+              setSelectedQuoteId(null);
+              setEditQuoteId(id);
+              setTab(kind);
+            }}
           />
         </div>
       </main>
@@ -117,7 +125,7 @@ export default function Dashboard() {
               <button
                 key={id}
                 type="button"
-                onClick={() => setTab(id)}
+                onClick={() => { setTab(id); setEditQuoteId(null); }}
                 className={`flex shrink-0 items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
                   tab === id
                     ? "bg-primary text-primary-foreground shadow-sm"
@@ -159,7 +167,11 @@ export default function Dashboard() {
         {tab === "siparis" && (
           <QuoteForm
             kind="siparis"
-            onSaved={(id) => setSelectedQuoteId(id)}
+            editQuoteId={editQuoteId}
+            onSaved={(id) => {
+              setEditQuoteId(null);
+              setSelectedQuoteId(id);
+            }}
             goToProducts={() => setTab("urunler")}
             goToCustomers={() => setTab("musteriler")}
           />
@@ -167,7 +179,11 @@ export default function Dashboard() {
         {tab === "teklif" && (
           <QuoteForm
             kind="teklif"
-            onSaved={(id) => setSelectedQuoteId(id)}
+            editQuoteId={editQuoteId}
+            onSaved={(id) => {
+              setEditQuoteId(null);
+              setSelectedQuoteId(id);
+            }}
             goToProducts={() => setTab("urunler")}
             goToCustomers={() => setTab("musteriler")}
           />

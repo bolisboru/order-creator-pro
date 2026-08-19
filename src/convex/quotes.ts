@@ -82,6 +82,7 @@ export const create = mutation({
         name: i.name.trim(),
         price: i.price,
         quantity: i.quantity,
+        unit: i.unit || undefined,
         description: i.description?.trim() || undefined,
       })),
       hasDiscount: args.hasDiscount,
@@ -93,6 +94,57 @@ export const create = mutation({
     });
 
     return { id, quoteNo };
+  },
+});
+
+export const update = mutation({
+  args: {
+    id: v.id("quotes"),
+    kind: v.optional(v.union(v.literal("teklif"), v.literal("siparis"))),
+    customerName: v.string(),
+    deliveryAddress: v.string(),
+    contactNumber: v.string(),
+    orderDate: v.string(),
+    items: v.array(quoteItemValidator),
+    hasDiscount: v.boolean(),
+    hasSystem: v.boolean(),
+    hasBarcode: v.boolean(),
+    currency: v.string(),
+    vatRate: v.number(),
+  },
+  handler: async (ctx, args) => {
+    const user = await getCurrentUser(ctx);
+    if (!user) throw new Error("Not authenticated");
+    const quote = await ctx.db.get(args.id);
+    if (!quote || quote.userId !== user._id) {
+      throw new Error("Teklif bulunamadı");
+    }
+    if (!args.customerName.trim()) {
+      throw new Error("Firma adı zorunludur");
+    }
+    if (args.items.length === 0) {
+      throw new Error("Teklife en az bir ürün ekleyin");
+    }
+    await ctx.db.patch(args.id, {
+      kind: args.kind ?? quote.kind,
+      customerName: args.customerName.trim(),
+      deliveryAddress: args.deliveryAddress.trim(),
+      contactNumber: args.contactNumber.trim(),
+      orderDate: args.orderDate,
+      items: args.items.map((i) => ({
+        name: i.name.trim(),
+        price: i.price,
+        quantity: i.quantity,
+        unit: i.unit || undefined,
+        description: i.description?.trim() || undefined,
+      })),
+      hasDiscount: args.hasDiscount,
+      hasSystem: args.hasSystem,
+      hasBarcode: args.hasBarcode,
+      currency: args.currency,
+      vatRate: args.vatRate,
+    });
+    return { id: args.id, quoteNo: quote.quoteNo };
   },
 });
 
