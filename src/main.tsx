@@ -114,7 +114,7 @@ createRoot(document.getElementById("root")!).render(
         <VlyToolbar />
       </ToolbarErrorBoundary>
       <ConvexAuthProvider client={convex}>
-        <BrowserRouter>
+        <BrowserRouter basename="/order-creator-pro/">
           <RouteSyncer />
           <Suspense fallback={<RouteLoading />}>
             <Routes>
